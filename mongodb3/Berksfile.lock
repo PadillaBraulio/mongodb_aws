@@ -1,0 +1,21 @@
+DEPENDENCIES
+  mongodb3
+    path: .
+    metadata: true
+  mongodb3-test
+    path: test/cookbooks/mongodb3-test
+
+GRAPH
+  apt (7.0.0)
+  mongodb3 (5.3.0)
+    apt (>= 0.0.0)
+    runit (~> 1.7.0)
+    user (>= 0.0.0)
+    yum (>= 0.0.0)
+  mongodb3-test (0.1.0)
+    mongodb3 (>= 0.0.0)
+  packagecloud (1.0.0)
+  runit (1.7.8)
+    packagecloud (>= 0.0.0)
+  user (0.7.0)
+  yum (5.1.0)
