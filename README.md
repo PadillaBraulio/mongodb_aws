@@ -52,6 +52,7 @@ First we need to create the aws infraestructure to deploy the mongo replicaset.
 After the cloudformation have run successfuly, go to the opswork section, and you will see an stack that was just created, the name of the stack, is the same that the name of your cloudformation stack.
 
 Before start creating the instances go to the custom json specification on the opsworks stack.
+
 | Variable | Default value | Description |
 | ------ | ------ | ------- |
 | master_node | master1 | The hostname of the node, that will be treated as the master   |
