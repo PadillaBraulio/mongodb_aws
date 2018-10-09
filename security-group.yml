@@ -1,0 +1,47 @@
+Description: >
+  Security group template
+
+Parameters:
+  VpcId:
+    Type: String
+
+Resources:
+
+  MongoSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MongoSecurityGroup
+      VpcId: !Ref 'VpcId'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Name
+        Value: MongoSecurityGroup
+
+  IngresMongoSecurityGroup1:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      FromPort: '27017'
+      ToPort: '27017'
+      IpProtocol: tcp
+      GroupId: !Ref 'MongoSecurityGroup'
+      SourceSecurityGroupId: !Ref 'MongoSecurityGroup'
+
+  IngresMongoSecurityGroup2:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      FromPort: '3000'
+      ToPort: '3000'
+      IpProtocol: tcp
+      GroupId: !Ref 'MongoSecurityGroup'
+      SourceSecurityGroupId: !Ref 'MongoSecurityGroup'
+
+
+Outputs:
+
+    MongoSecurityGroup:
+        Description: A reference to the MongoSecurityGroup created
+        Value: !Ref MongoSecurityGroup

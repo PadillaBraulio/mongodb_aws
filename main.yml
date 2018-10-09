@@ -1,0 +1,103 @@
+Description: >
+  MotionMath infrastructure templates
+
+Parameters:
+
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-]+(/[0-9a-zA-Z-]+)*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/). It cannot start or end
+      with forward slash (/) because they are automatically appended.
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/). It cannot start or end with forward slash (/) because they
+      are automatically appended.
+    Type: String
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.10.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.11.0/24
+
+  PublicSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.12.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation)
+    Type: String
+    Default: 10.192.20.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation)
+    Type: String
+    Default: 10.192.21.0/24
+
+  PrivateSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation)
+    Type: String
+    Default: 10.192.22.0/24
+
+  KeyName:
+    Description: Key pair to use for the OpsWorks instances
+    Type: AWS::EC2::KeyPair::KeyName
+
+  zipFileS3:
+    Description: String pointing to the s3 bucket where the recipes are
+    Type: String
+
+Resources:
+
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3-us-west-1.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/vpc.yml
+      Parameters:
+        EnvironmentName:              !Ref AWS::StackName
+        VpcCIDR:                      !Ref VpcCIDR
+        PublicSubnet1CIDR:            !Ref PublicSubnet1CIDR
+        PublicSubnet2CIDR:            !Ref PublicSubnet2CIDR
+        PublicSubnet3CIDR:            !Ref PublicSubnet3CIDR
+        PrivateSubnet1CIDR:           !Ref PrivateSubnet1CIDR
+        PrivateSubnet2CIDR:           !Ref PrivateSubnet2CIDR
+        PrivateSubnet3CIDR:           !Ref PrivateSubnet3CIDR
+
+  SecurityGroup:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3-us-west-1.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/security-group.yml
+      Parameters:
+        VpcId:                      !GetAtt VPC.Outputs.VPC
+
+  OpsWorksStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: Rds
+    Properties:
+      TemplateURL: !Sub https://s3-us-west-1.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/ops-works.yml
+      Parameters:
+        PrivateSubnet:                                !GetAtt VPC.Outputs.PrivateSubnet1
+        VpcId:                                        !GetAtt VPC.Outputs.VPC
+        EnvironmentName:                              !Ref EnvironmentType
+        KeyName:                                      !Ref KeyName
+        zipFileS3:                                    !Ref zipFileS3
+        MongoSecurityGroup:                           !GetAtt SecurityGroup.Outputs.MongoSecurityGroup
