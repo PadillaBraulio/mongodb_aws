@@ -189,7 +189,7 @@ default['mongodb3']['config']['mongod']['operationProfiling']['mode'] = nil # de
 
 # replication Options : http://docs.mongodb.org/manual/reference/configuration-options/#replication-options
 default['mongodb3']['config']['mongod']['replication']['oplogSizeMB'] = nil
-default['mongodb3']['config']['mongod']['replication']['replSetName'] = "testing"
+default['mongodb3']['config']['mongod']['replication']['replSetName'] = nil
 default['mongodb3']['config']['mongod']['replication']['secondaryIndexPrefetch'] = nil # default : 'all'
 
 # sharding Options : http://docs.mongodb.org/manual/reference/configuration-options/#sharding-options
