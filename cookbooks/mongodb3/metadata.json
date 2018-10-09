@@ -1,0 +1,51 @@
+{
+  "name": "mongodb3",
+  "description": "Installs/Configures mongodb3",
+  "long_description": "Installs/Configures mongodb3",
+  "maintainer": "Sunggun Yu",
+  "maintainer_email": "sunggun.dev@gmail.com",
+  "license": "Apache 2.0",
+  "platforms": {
+    "ubuntu": ">= 12.4.0",
+    "debian": "= 7.8.0",
+    "redhat": "= 6.6.0",
+    "centos": "= 7.2.0",
+    "oracle": "= 6.6.0",
+    "amazon": ">= 0.0.0"
+  },
+  "dependencies": {
+    "apt": ">= 0.0.0",
+    "yum": ">= 0.0.0",
+    "user": ">= 0.0.0",
+    "runit": "~> 1.7.0"
+  },
+  "recommendations": {
+  },
+  "suggestions": {
+  },
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "replacing": {
+  },
+  "attributes": {
+  },
+  "groupings": {
+  },
+  "recipes": {
+  },
+  "version": "5.3.0",
+  "source_url": "",
+  "issues_url": "",
+  "privacy": false,
+  "chef_versions": [
+
+  ],
+  "ohai_versions": [
+
+  ],
+  "gems": [
+
+  ]
+}

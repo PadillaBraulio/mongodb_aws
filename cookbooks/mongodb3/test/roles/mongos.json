@@ -1,0 +1,24 @@
+{
+  "name": "mongos",
+  "description": "Role for Mongos",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+    "mongodb3" : {
+      "config" : {
+        "mongos" : {
+          "sharding" : {
+            "configDB" : "server1, server2, server3"
+          }
+        }
+      }
+    }
+  },
+  "override_attributes": {
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[mongodb3::mongos]"
+  ],
+  "env_run_lists": {
+  }
+}

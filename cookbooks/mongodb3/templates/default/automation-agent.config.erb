@@ -1,0 +1,82 @@
+# /etc/mongodb-mms/automation-agent.config
+
+#
+# REQUIRED
+# Enter your Group ID - It can be found at https://cloud.mongodb.com/settings/group
+#
+mmsGroupId=<%= @config['mmsGroupId'] %>
+
+#
+# REQUIRED
+# Enter your API key - It can be found at https://cloud.mongodb.com/settings/group
+#
+mmsApiKey=<%= @config['mmsApiKey'] %>
+
+#
+# Base url of the MMS web server.
+#
+mmsBaseUrl=<%= @config['mmsBaseUrl'] %>
+
+#
+# Path to log file
+#
+logFile=<%= @config['logFile'] %>
+
+#
+# Path to backup cluster config to
+#
+mmsConfigBackup=<%= @config['mmsConfigBackup'] %>
+
+#
+# Lowest log level to log.  Can be (in order): DEBUG, ROUTINE, INFO, WARN, ERROR, DOOM
+#
+logLevel=<%= @config['logLevel'] %>
+
+#
+# Maximum number of rotated log files
+#
+maxLogFiles=<%= @config['maxLogFiles'] %>
+
+#
+# Maximum size in bytes of a log file (before rotating)
+#
+maxLogFileSize=<%= @config['maxLogFileSize'] %>
+
+#
+# URL to proxy all HTTP requests through
+#
+<% if @config['httpProxy'].to_s.empty? %>
+#httpProxy=
+<% else %>
+httpProxy=<%= @config['httpProxy'] %>
+<% end %>
+
+#
+# The absolute path to an non-system-standard location for the Kerberos configuration file
+#
+<% if @config['krb5ConfigLocation'].to_s.empty? %>
+#krb5ConfigLocation=
+<% else %>
+krb5ConfigLocation=<%= @config['krb5ConfigLocation'] %>
+<% end %>
+
+#
+# The path on disk that contains the trusted certificate authority certificates in PEM format.
+#
+<% if @config['sslTrustedMMSServerCertificate'].to_s.empty? %>
+#sslTrustedMMSServerCertificate=
+<% else %>
+sslTrustedMMSServerCertificate=<%= @config['sslTrustedMMSServerCertificate'] %>
+<% end %>
+
+#
+# Use this option to disable certificate verification by setting this value to false.
+#
+<% if @config['sslTrustedMMSServerCertificate'].to_s.empty? %>
+#sslRequireValidMMSServerCertificates=
+<% else %>
+sslRequireValidMMSServerCertificates=<%= @config['sslRequireValidMMSServerCertificates'] %>
+<% end %>
+
+# For additional optional settings, please see
+# https://docs.cloud.mongodb.com/reference/automation-agent/

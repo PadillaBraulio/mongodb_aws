@@ -1,0 +1,257 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  name: chef_zero
+  require_chef_omnibus: true
+  environments_path:    'test/environments'
+  data_bags_path:       'test/data_bags'
+  roles_path:           'test/roles'
+
+platforms:
+  - name: ubuntu-12.04
+    run_list:
+    - recipe[apt]
+    attributes:
+      apt:
+        compile_time_update: true
+  - name: ubuntu-14.04
+    run_list:
+    - recipe[apt]
+    attributes:
+      apt:
+        compile_time_update: true
+  - name: ubuntu-15.04
+    run_list:
+    - recipe[apt]
+    attributes:
+      apt:
+        compile_time_update: true
+  - name: ubuntu-16.04
+    run_list:
+    - recipe[apt]
+    attributes:
+      apt:
+        compile_time_update: true
+  - name: debian-7.8
+    run_list:
+    - recipe[apt]
+    attributes:
+      apt:
+        compile_time_update: true
+  - name: centos-6.8
+    driver:
+      box: bento/centos-6.8
+  - name: centos-7.2
+    driver:
+      box: bento/centos-7.2
+  - name: oel-6.6
+    driver:
+      box: rafacas/oel66-plain
+      box_url: https://atlas.hashicorp.com/rafacas/boxes/oel66-plain/versions/1.0.0/providers/virtualbox.box
+  - name: ami-2014.03
+    driver:
+      box_url: http://images.geekandi.com/amazon-linux/vagrant-amazon-linux64-2014.03-public-virtualbox.box
+
+suites:
+  - name: default
+    driver:
+      vm_hostname: mongo3
+    run_list:
+      - recipe[mongodb3::default]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+      mongodb3:
+        mongod:
+          disable-transparent-hugepages: true
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+
+  - name: custom
+    run_list:
+      - recipe[mongodb3-test::custom]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    includes:
+      - ubuntu-14.04
+      - centos-7.2
+
+  - name: default-30x
+    run_list:
+      - recipe[mongodb3-test::default-30x]
+    attributes:
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+      - ubuntu-15.04
+      - ubuntu-16.04
+
+  - name: replica
+    driver:
+      vm_hostname: replica
+    run_list:
+      - role[replset]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+
+  - name: configsvr
+    driver:
+      vm_hostname: configsvr
+    run_list:
+      - role[configsvr]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+
+  - name: mongos
+    driver:
+      vm_hostname: mongos
+    run_list:
+      - role[mongos]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+
+  - name: wired-tiger
+    driver:
+      vm_hostname: wired-tiger
+    run_list:
+      - role[wired_tiger]
+    attributes:
+      mongodb3:
+        version: '3.0.9'
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+      - ubuntu-16.04
+
+  - name: mms-automation-agent
+    driver:
+      vm_hostname: mms-automation-agent
+    run_list:
+      - role[mms_automation_agent]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+      - debian-7.8
+      - centos-7.2
+
+  - name: mms-automation-agent-with-databag
+    driver:
+      vm_hostname: mms-automation-agent
+    encrypted_data_bag_secret_key_path: "test/data_bags/encrypted_data_bag_secret"
+    run_list:
+      - recipe[mongodb3-test::mms_automation_agent_with_data_bag]
+    provisioner:
+      client_rb:
+        environment: dev
+    includes:
+      - ubuntu-12.04
+
+  - name: mms-monitoring-agent
+    driver:
+      vm_hostname: mms-monitoring-agent
+    run_list:
+      - role[mms_monitoring_agent]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    excludes:
+      - oel-6.6
+      - ami-2014.03
+      - debian-7.8
+      - centos-7.2
+
+  - name: amazon
+    driver:
+      vm_hostname: mongo3
+    run_list:
+      - recipe[mongodb3-test::amazon]
+      - recipe[mongodb3::default]
+    attributes:
+      chef_client:
+        config:
+          force_logger: true
+          log_level: info
+      build-essential:
+        compile_time: false
+    provisioner:
+      client_rb:
+        environment: dev
+    includes:
+      - ami-2014.03

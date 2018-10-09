@@ -1,0 +1,27 @@
+{
+  "name": "configsvr",
+  "description": "Role for MongoDB Config server",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+    "mongodb3": {
+      "config" : {
+        "mongod" : {
+          "net" : {
+            "port" : 27019
+          },
+          "sharding" : {
+            "clusterRole" : "configsvr"
+          }
+        }
+      }
+    }
+  },
+  "override_attributes": {
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[mongodb3::default]"
+  ],
+  "env_run_lists": {
+  }
+}
