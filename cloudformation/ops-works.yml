@@ -1,0 +1,100 @@
+Description: Opsworks Stack
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+  PrivateSubnet:
+    Type: String
+  VpcId:
+    Type: String
+  MongoSecurityGroup:
+    Type: String
+  EnvironmentName:
+    Type: String
+  zipFileS3:
+    Type: String
+  replicaSetName:
+    Type: String
+
+Resources:
+
+  defaultRole:
+      Type: AWS::IAM::Role
+      Properties:
+          AssumeRolePolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Principal:
+                      Service:
+                        - ec2.amazonaws.com
+                  Action:
+                    - sts:AssumeRole
+
+  defaultInstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+          Path: /
+          Roles:
+            - !Ref defaultRole
+
+  OpsWorksStack:
+    Type: AWS::OpsWorks::Stack
+    Properties:
+      Name: !Ref EnvironmentName
+      ServiceRoleArn: !Join ['', ['arn:aws:iam::', !Ref 'AWS::AccountId', ':role/aws-opsworks-service-role']]
+      DefaultInstanceProfileArn: !GetAtt defaultInstanceProfile.Arn
+      DefaultSshKeyName: !Ref 'KeyName'
+      DefaultOs: Ubuntu 16.04 LTS
+      DefaultRootDeviceType: ebs
+      VpcId: !Ref VpcId
+      DefaultSubnetId: !Ref PrivateSubnet
+      UseCustomCookbooks: true
+      UseOpsworksSecurityGroups: true
+      CustomCookbooksSource:
+        Type: s3
+        Url: !Ref zipFileS3
+      ConfigurationManager:
+        Name: Chef
+        Version: '12'
+      CustomJson: !Sub |
+          {
+            "master_node": "master1"
+            "mongodb3": {
+              "config":{
+                 "mongod"{
+                    "net": {
+                      "bindIp": "0.0.0.0"
+                      },
+                    "storage":{
+                      "dbPath": "/data"
+                      },
+                    "replication":{
+                      "replSetName": ${replicaSetName}
+                      }
+                    }
+                }
+              }
+          }
+
+  Mongo:
+    Type: AWS::OpsWorks::Layer
+    Properties:
+      AutoAssignElasticIps: true
+      AutoAssignPublicIps:  true
+      CustomRecipes:
+        Setup:
+          - mongodb3::default
+        Configure:
+          - mongodb3::configure
+      StackId: !Ref 'OpsWorksStack'
+      Name: Mongo
+      Type: custom
+      Shortname: mongo
+      VolumeConfigurations:
+        - MountPoint: /data
+          NumberOfDisks: 1
+          Size: 1000
+          VolumeType: gp2
+      EnableAutoHealing: 'false'
+      CustomSecurityGroupIds:
+      - !Ref 'MongoSecurityGroup'
