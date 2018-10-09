@@ -67,6 +67,10 @@ Parameters:
     Description: String pointing to the s3 bucket where the recipes are
     Type: String
 
+  replicaSetName:
+    Description: Replica set name, for the mongo cluster
+    Type: String
+
 Resources:
 
   VPC:

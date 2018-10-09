@@ -13,6 +13,8 @@ Parameters:
     Type: String
   zipFileS3:
     Type: String
+  replicaSetName:
+    Type: String
 
 Resources:
 
@@ -57,6 +59,21 @@ Resources:
       CustomJson: !Sub |
           {
             "master_node": "master1"
+            "mongodb3": {
+              "config":{
+                 "mongod"{
+                    "net": {
+                      "bindIp": "0.0.0.0"
+                      },
+                    "storage":{
+                      "dbPath": "/data"
+                      },
+                    "replication":{
+                      "replSetName": ${replicaSetName}
+                      }
+                    }
+                }
+              }
           }
 
   Mongo:
