@@ -24,7 +24,7 @@ $ cd cookboks
 $ rm lambda.zip
 $ zip -r lambda.zip .
 ```
-Upload the zip file to the **main bucket** and save the name of the file on s3 bucket, this will be used on the cloudformation.
+Upload the zip file to the **main bucket** and save the name of the file on s3 bucket (make sure it is public), this will be used on the cloudformation.
 
 # Cloudformation
 First we need to create the aws infraestructure to deploy the mongo replicaset.
