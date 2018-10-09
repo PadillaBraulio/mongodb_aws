@@ -30,19 +30,17 @@ Resources:
 
   defaultInstanceProfile:
       Type: AWS::IAM::InstanceProfile
-      DependsOn: bucketRole
       Properties:
           Path: /
           Roles:
-            - !Ref bucketRole
-
+            - !Ref defaultRole
 
   OpsWorksStack:
     Type: AWS::OpsWorks::Stack
     Properties:
       Name: !Ref EnvironmentName
       ServiceRoleArn: !Join ['', ['arn:aws:iam::', !Ref 'AWS::AccountId', ':role/aws-opsworks-service-role']]
-      DefaultInstanceProfileArn: !Ref defaultInstanceProfile
+      DefaultInstanceProfileArn: !GetAtt defaultInstanceProfile.Arn
       DefaultSshKeyName: !Ref 'KeyName'
       DefaultOs: Ubuntu 16.04 LTS
       DefaultRootDeviceType: ebs
@@ -51,7 +49,7 @@ Resources:
       UseCustomCookbooks: true
       UseOpsworksSecurityGroups: true
       CustomCookbooksSource:
-        Type: S3
+        Type: s3
         Url: !Ref zipFileS3
       ConfigurationManager:
         Name: Chef
@@ -80,7 +78,6 @@ Resources:
           NumberOfDisks: 1
           Size: 1000
           VolumeType: gp2
-          Encrypted: true
       EnableAutoHealing: 'false'
       CustomSecurityGroupIds:
       - !Ref 'MongoSecurityGroup'

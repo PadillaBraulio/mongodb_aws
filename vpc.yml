@@ -309,64 +309,6 @@ Resources:
         Properties:
             RouteTableId: !Ref PublicRouteTable
             SubnetId: !Ref PublicSubnet3
-# ----------------------
-# VPC Peering connection
-# ----------------------
-
-    VPCPeeringConnection:
-        Type: AWS::EC2::VPCPeeringConnection
-        Properties:
-            VpcId: !Ref VPC
-            PeerVpcId:
-                Fn::ImportValue: MANAGEMENT-VPC-ID
-            Tags:
-              - Key: Name
-                Value: vpc-peer-production-management
-              - Key: Environment
-                Value: !Ref EnvironmentName
-    PeeringMangamentPrivateRoute1:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId:
-                Fn::ImportValue: MANAGEMENT-PRIVATE-ROUTE-TABLE
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock: !Ref VpcCIDR
-    PeeringMangamentPublicRoute1:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId:
-                Fn::ImportValue: MANAGEMENT-PUBLIC-ROUTE-TABLE
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock: !Ref VpcCIDR
-    PeeringPrivateRoute1:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref PrivateRouteTable1
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock:
-                Fn::ImportValue:  MANAGEMENT-VPC-CIDRD
-    PeeringPrivateRoute2:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref PrivateRouteTable2
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock:
-                Fn::ImportValue:  MANAGEMENT-VPC-CIDRD
-    PeeringPrivateRoute3:
-        Type: AWS::EC2::Route
-        Condition: LaunchThirdSubnet
-        Properties:
-            RouteTableId: !Ref PrivateRouteTable3
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock:
-                Fn::ImportValue:  MANAGEMENT-VPC-CIDRD
-    PeeringPublicRoute:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref PublicRouteTable
-            VpcPeeringConnectionId: !Ref VPCPeeringConnection
-            DestinationCidrBlock:
-                Fn::ImportValue:  MANAGEMENT-VPC-CIDRD
 
 Outputs:
 
