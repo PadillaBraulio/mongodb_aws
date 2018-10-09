@@ -58,10 +58,10 @@ Resources:
         Version: '12'
       CustomJson: !Sub |
           {
-            "master_node": "master1"
+            "master_node": "master1",
             "mongodb3": {
               "config":{
-                 "mongod"{
+                 "mongod":{
                     "net": {
                       "bindIp": "0.0.0.0"
                       },
@@ -69,7 +69,7 @@ Resources:
                       "dbPath": "/data"
                       },
                     "replication":{
-                      "replSetName": ${replicaSetName}
+                      "replSetName": "${replicaSetName}"
                       }
                     }
                 }

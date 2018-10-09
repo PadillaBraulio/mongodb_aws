@@ -70,6 +70,7 @@ Parameters:
   replicaSetName:
     Description: Replica set name, for the mongo cluster
     Type: String
+    Default: nclouds
 
 Resources:
 
@@ -105,3 +106,4 @@ Resources:
         KeyName:                                      !Ref KeyName
         zipFileS3:                                    !Ref zipFileS3
         MongoSecurityGroup:                           !GetAtt SecurityGroup.Outputs.MongoSecurityGroup
+        replicaSetName:                               !Ref replicaSetName
