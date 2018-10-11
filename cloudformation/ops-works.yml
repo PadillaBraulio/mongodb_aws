@@ -30,6 +30,18 @@ Resources:
                   Action:
                     - sts:AssumeRole
 
+  defaultRoleLambdaPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+          PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Effect:   Allow
+                  Action:   "opsworks:*"
+                  Resource: "*"
+          Roles:
+            - !Ref defaultRole
+
   defaultInstanceProfile:
       Type: AWS::IAM::InstanceProfile
       Properties:
@@ -58,7 +70,6 @@ Resources:
         Version: '12'
       CustomJson: !Sub |
           {
-            "master_node": "master1",
             "mongodb3": {
               "config":{
                  "mongod":{
@@ -98,3 +109,7 @@ Resources:
       EnableAutoHealing: 'false'
       CustomSecurityGroupIds:
       - !Ref 'MongoSecurityGroup'
+      CustomJson: !Sub |
+          {
+            "is_initiated":"no"
+          }
