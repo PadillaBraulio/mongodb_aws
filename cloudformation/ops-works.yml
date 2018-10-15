@@ -37,7 +37,14 @@ Resources:
               Version: 2012-10-17
               Statement:
                 - Effect:   Allow
-                  Action:   "opsworks:*"
+                  Action: [
+                    "opsworks:DescribeInstances",
+                    "opsworks:DescribeLayers",
+                    "opsworks:DescribeStacks",
+                    "opsworks:UpdateInstance",
+                    "opsworks:UpdateLayer",
+                    "opsworks:UpdateStack"
+                  ]
                   Resource: "*"
           Roles:
             - !Ref defaultRole
