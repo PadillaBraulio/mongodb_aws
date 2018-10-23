@@ -100,7 +100,7 @@ ruby_block 'Adding and removing members' do
         i = 0
         for member in state["members"] do
           members.push("#{member["name"]}")
-          if member["state"].to_i != 1 && member["health"].to_i == 0
+          if member["health"].to_i == 0
             Chef::Log.info "Member unhealthy, deleting: " + member["name"].to_s
             health = false
           else
