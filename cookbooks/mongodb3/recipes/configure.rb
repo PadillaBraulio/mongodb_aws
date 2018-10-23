@@ -1,61 +1,160 @@
 package 'awscli'
-# Configure replicas
-this_instance             = search("aws_opsworks_instance", "self:true").first
-layer_id                  = this_instance["layer_ids"][0]
-# availability_zone         = this_instance["availability_zone"]
-# n = availability_zone.size
-# region=availability_zone[0..n-2]
+include_recipe "mongodb3::mongo_gem"
+
+require 'json'
+require 'mongo'
+require 'bson'
+require "aws-sdk-opsworks"
+
+# Obtaning mongo instnaces
+this_instance = search("aws_opsworks_instance", "self:true").first
+layer_id = this_instance["layer_ids"][0]
+mongo = Mongo::Client.new([ '127.0.0.1' ], :database => "admin", :connect => "direct", :server_selection_timeout => 5)
+opsworks = Aws::OpsWorks::Client.new(:region => "us-east-1")
+
+rs_members = []
+rs_member_ips = []
 mongo_nodes = []
+i = 0
+configured = true
+
 search("aws_opsworks_instance", "layer_ids:#{layer_id}").each do |instance|
+  i += 1
+  rs_members << {"_id" => i, "host" => "#{instance['hostname']}"}
+  rs_member_ips << {"_id" => i, "host" => "#{instance['ipaddress']}"}
   mongo_nodes.push(instance['hostname'])
 end
 
-# TODO Get the node status, and exist until they all are in online state
 ruby_block 'Configuring_replica_set' do
   block do
-    if "#{node['is_initiated']}" == "no"
-      master_node_command="aws opsworks --region us-east-1 describe-instances --layer-id #{layer_id} --query 'Instances[0].Hostname'"
-      master_node=`#{master_node_command}`.delete!("\n").delete!("\"")
+    Chef::Log.info "Checking configuration"
+    config = {}
+    config['replSetGetConfig'] = 1
+
+    init_hosts = []
+    mongo_nodes.each do |host|
+      begin
+        check = Mongo::Client.new([ "#{host}" ], :database => "admin", :connect => "direct", :server_selection_timeout => 5)
+        check.database.command(config)
+        Chef::Log.info "Configuration found"
+        init_hosts.push(true)
+      rescue Mongo::Auth::Unauthorized, Mongo::Error => e
+        info_string  = "Error #{e.class}: #{e.message}"
+        Chef::Log.info "No configuration found: " + info_string
+        init_hosts.push(false)
+      end
+    end
+
+    Chef::Log.info "Configuration found: " + init_hosts.join(", ")
+
+    unless init_hosts.include?(true)
+      configured = false
+    end
+
+    unless configured
+      master_node_command = opsworks.describe_instances({
+        layer_id: layer_id,
+      })
+      master_node= master_node_command.instances[0].hostname
+      Chef::Log.info "Checking hostname " + master_node
       if master_node == this_instance["hostname"]
         Chef::Log.info "Initializing replica set"
-        system("echo \"rs.initiate()\" | mongo")
-        system("aws opsworks --region us-east-1 update-layer --layer-id #{layer_id} --custom-json " + '"{\"is_initiated\":\"yes\"}"' )
+        cmd = {}
+        cmd['replSetInitiate'] = {
+            "_id" => "#{node['mongodb3']['config']['mongod']['replication']['replSetName']}",
+            "members" => rs_members
+        }
+        begin
+          mongo.database.command(cmd)
+        rescue Mongo::Auth::Unauthorized, Mongo::Error => e
+          info_string  = "Error #{e.class}: #{e.message}"
+          Chef::Log.info "Initialization failed: " + info_string
+        end
       end
     end
+
   end
 end
 
-ruby_block 'Adding_slaves' do
+
+ruby_block 'Adding and removing members' do
   block do
-    mongo_nodes.each do |host|
-      Chef::Log.info "Adding nodes"
-      if host != this_instance["hostname"]
-        system("echo \"rs.add('#{host}:27017')\" | mongo")
+    if configured
+      cmd = {}
+      cmd['replSetGetStatus'] = 1
+      status = mongo.database.command(cmd)
+      config = {}
+      config['replSetGetConfig'] = 1
+      config = mongo.database.command(config)
+      version = config.documents[0]["config"]["version"].to_i
+      Chef::Log.info "Configuration version: " + version.to_s
+      state = status.documents[0]
+
+      if state["myState"].to_i == 1
+        sleep(120)
+        Chef::Log.info "Master member, state: " + state["myState"].to_s
+        Chef::Log.info "Cluster size: " + state["members"].size.to_s
+        rs_new_members = []
+        members = []
+        health = true
+        i = 0
+        for member in state["members"] do
+          members.push("#{member["name"]}")
+          if member["state"].to_i != 1 && member["health"].to_i == 0
+            Chef::Log.info "Member unhealthy, deleting: " + member["name"].to_s
+            health = false
+          else
+            i += 1
+            Chef::Log.info "Member healthy, skipping: " + member["name"].to_s
+            rs_new_members << {"_id" => i, "host" => "#{member["name"]}"}
+          end
+        end
+
+        Chef::Log.info "Checking for new members"
+        mongo_nodes.each do |host|
+          host_name = "#{host}:27017"
+          unless members.include?(host_name)
+            i += 1
+            available = true
+            Chef::Log.info "New member found, checking availability: " + host_name
+            begin
+              check = Mongo::Client.new([ "#{host}" ], :database => "admin", :connect => "direct", :server_selection_timeout => 5)
+              check.database_names
+            rescue Mongo::Auth::Unauthorized, Mongo::Error => e
+              available = false
+              info_string  = "Error #{e.class}: #{e.message}"
+              Chef::Log.info "Member Unavailable: " + info_string
+            end
+
+            if available
+              rs_new_members << {"_id" => i, "host" => host_name}
+              Chef::Log.info "New member added: " + host_name
+              health = false
+            end
+          end
+        end
+
+        if health
+          Chef::Log.info "Cluster healthy, no reconfiguration needed"
+        else
+          Chef::Log.info "Cluster unhealthy, reconfiguration needed"
+          new_version = version + 1
+          Chef::Log.info "New configuration version: " + new_version.to_s
+          cmd = {}
+          cmd['replSetReconfig'] = {
+            "version" => new_version,
+            "_id" => "#{node['mongodb3']['config']['mongod']['replication']['replSetName']}",
+            "members" => rs_new_members
+          }
+          begin
+            mongo.database.command(cmd)
+          rescue Mongo::Auth::Unauthorized, Mongo::Error => e
+            info_string  = "Error #{e.class}: #{e.message}"
+            Chef::Log.info "Re-Initialization failed: " + info_string
+          end
+        end
+
       end
     end
-  end
-end
-
-ruby_block 'Removing unhealthy nodes' do
-  block do
-    sleep(60)
-    command_status_of_nodes="echo \"rs.status().members\" | mongo --quiet | grep health\\\" | awk ' {print $3} '"
-    status_of_nodes=`#{command_status_of_nodes}`.delete!("\n").delete!(",")
-    nodes=status_of_nodes.split("")
-    for index_node in 0..nodes.size-1 do
-      if nodes[index_node] != "1"
-        Chef::Log.info "node index unhealthy " + index_node.to_s
-        command="echo \"rs.status().members[#{index_node}]['name']\" | mongo --quiet"
-        unhealthy_node=`#{command}`.delete!("\n")
-        Chef::Log.info "deleting unhealthy node " + unhealthy_node
-        system("echo 'rs.remove(\"#{unhealthy_node}\")' | mongo")
-      else
-        Chef::Log.info "node index healthy "  + index_node.to_s
-        command="echo \"rs.status().members[#{index_node}]['name']\" | mongo --quiet"
-        healthy_node=`#{command}`.delete!("\n")
-        Chef::Log.info "healthy node " + healthy_node
-      end
-    end
-
   end
 end
